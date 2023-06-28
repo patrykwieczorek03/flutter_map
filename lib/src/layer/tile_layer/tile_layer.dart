@@ -231,6 +231,12 @@ class TileLayer extends StatefulWidget {
   /// no affect.
   final TileUpdateTransformer tileUpdateTransformer;
 
+  /// Widget to be shown behind map
+  final Widget? backgroundWidget;
+
+  /// Hide map behind the [backgroundWidget] if not null. Default: false.
+  final bool hideMap;
+
   TileLayer({
     super.key,
     this.urlTemplate,
@@ -259,6 +265,8 @@ class TileLayer extends StatefulWidget {
     this.evictErrorTileStrategy = EvictErrorTileStrategy.none,
     this.reset,
     this.tileBounds,
+    this.backgroundWidget,
+    this.hideMap = false,
     TileUpdateTransformer? tileUpdateTransformer,
     String userAgentPackageName = 'unknown',
   })  : assert(
@@ -490,10 +498,18 @@ class _TileLayerState extends State<TileLayer> with TickerProviderStateMixin {
 
     _tileScaleCalculator.clearCacheUnlessZoomMatches(map.zoom);
 
+    final Widget background = UnconstrainedBox(
+      clipBehavior: Clip.hardEdge,
+      child: widget.backgroundWidget ?? Container(),
+    );
+
+    final Widget foreground = widget.hideMap ? background : Container();
+
     return Container(
       color: widget.backgroundColor,
       child: Stack(
         children: [
+          background,
           ..._tileImageManager
               .inRenderOrder(widget.maxZoom, tileZoom)
               .map((tileImage) {
@@ -510,6 +526,7 @@ class _TileLayerState extends State<TileLayer> with TickerProviderStateMixin {
               tileBuilder: widget.tileBuilder,
             );
           }),
+          foreground,
         ],
       ),
     );
